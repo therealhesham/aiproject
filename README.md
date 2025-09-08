@@ -1,2 +1,0 @@
-# aiproject
-sai project
