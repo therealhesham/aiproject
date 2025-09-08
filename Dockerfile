@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # تثبيت مكتبات بايثون المطلوبة مباشرة
-RUN pip install --no-cache-dir fastapi uvicorn pillow pytesseract openai python-dotenv
+RUN pip install --no-cache-dir fastapi uvicorn pillow pytesseract openai python-dotenv python-multipart
 
 # تعيين مجلد العمل
 WORKDIR /app

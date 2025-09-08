@@ -33,7 +33,7 @@ def extract_data(text):
         return {"extracted_text": response['choices'][0]['message']['content']}
 
 # نقطة رفع الصورة
-@app.post("/upload/")
+@app.post("/upload")
 async def upload_image(file: UploadFile = File(...)):
     path = f"temp_{file.filename}"
     with open(path, "wb") as f:
