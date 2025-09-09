@@ -6,6 +6,10 @@ services:
     container_name: ollama
     ports:
       - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama  # تخزين الموديلات علشان متضيعش لو الكونتينر اتمسح
+    command: >
+      sh -c "ollama serve & sleep 5 && ollama pull mistral && wait"
 
   fastapi:
     build: .
@@ -16,3 +20,6 @@ services:
       - ollama
     environment:
       - OLLAMA_API_URL=http://ollama:11434/api/chat
+
+volumes:
+  ollama_data:
