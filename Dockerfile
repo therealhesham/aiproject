@@ -1,7 +1,7 @@
 # Use official Python slim image
 FROM python:3.11-slim
 
-# Update system and install Tesseract OCR with Arabic language support
+# Update system and install Tesseract OCR with Arabic language support and curl
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     tesseract-ocr-ara \
@@ -12,8 +12,8 @@ RUN apt-get update && apt-get install -y \
 # Install Ollama
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
-# Pull LLaMA 3.1 8B model (runs in the background to avoid blocking build)
-RUN ollama pull llama3.1:8b &
+# Pull LLaMA 3.1 8B model (run in foreground to ensure completion)
+RUN ollama pull llama3.1:8b
 
 # Install Python dependencies
 RUN pip install --no-cache-dir fastapi uvicorn pillow pytesseract python-multipart ollama
@@ -28,4 +28,4 @@ COPY . .
 EXPOSE 3030
 
 # Start Ollama server in the background and run the FastAPI application
-CMD ["/bin/bash", "-c", "ollama serve & sleep 5 && uvicorn main:app --host 0.0.0.0 --port 3030"]
+CMD ["/bin/bash", "-c", "ollama serve & sleep 15 && uvicorn main:app --host 0.0.0.0 --port 3030"]
