@@ -1,43 +1,31 @@
 from fastapi import FastAPI, File, UploadFile
 from PIL import Image
 import pytesseract
-import requests
 import os
 import json
+from transformers import pipeline
 
 app = FastAPI()
 
-OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://ollama:11434/api/chat")
+# تحميل موديل جاهز (ممكن تغيّر mrm8488/t5-base-finetuned-summarize-news بموديل آخر)
+nlp = pipeline("text2text-generation", model="google/flan-t5-base")
 
 
 def extract_text_from_image(image_path):
     img = Image.open(image_path)
-    text = pytesseract.image_to_string(img, lang="ara")
+    text = pytesseract.image_to_string(img, lang="ara+eng")
     return text
 
 
 def extract_data(text):
     prompt = f"""
-استخرج لي البيانات التالية من النص: الاسم، العمر، البريد، الهاتف
-النص: {text}
-أرجع النتائج في شكل JSON.
-"""
+    استخرج لي البيانات التالية من النص: الاسم، العمر، البريد، الهاتف
+    النص: {text}
+    أرجع النتائج في شكل JSON.
+    """
     try:
-        response = requests.post(
-            OLLAMA_API_URL,
-            json={
-                "model": "mistral",  # أو أي موديل مسحوب عندك
-                "messages": [{"role": "user", "content": prompt}],
-                "stream": False,
-            },
-            timeout=60,
-        )
-
-        if response.status_code != 200:
-            return {"error": f"Failed to call Ollama: {response.text}"}
-
-        data = response.json()
-        content = data["message"]["content"]
+        result = nlp(prompt, max_length=256, do_sample=False)
+        content = result[0]["generated_text"]
 
         try:
             return json.loads(content)
@@ -57,4 +45,4 @@ async def upload_image(file: UploadFile = File(...)):
     data = extract_data(text)
 
     os.remove(path)  # حذف الملف المؤقت
-    return data
+    return {"text": text, "data": data}

@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # تثبيت مكتبات بايثون المطلوبة مباشرة
-RUN pip install --no-cache-dir fastapi uvicorn pillow pytesseract openai python-dotenv python-multipart requests
+RUN pip install --no-cache-dir fastapi uvicorn pillow pytesseract \
+    transformers torch python-multipart
 
 # تعيين مجلد العمل
 WORKDIR /app
@@ -18,7 +19,7 @@ WORKDIR /app
 COPY . .
 
 # فتح البورت
-EXPOSE 8000
+EXPOSE 3030
 
 # تشغيل التطبيق
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3030"]
