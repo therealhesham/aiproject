@@ -8,6 +8,7 @@ import json
 app = FastAPI()
 
 # عنوان Ollama server (ممكن يتغير لو سيرفر تاني)
+OLLAMA_API_URL = os.getenv("OLLAMA_API_URL")
 
 
 def extract_text_from_image(image_path):
@@ -24,7 +25,7 @@ def extract_data(text):
 """
     try:
         response = requests.post(
-           "http://localhost:11434/api/chat",
+            OLLAMA_API_URL,
             json={
                 "model": "mistral",  # أو أي موديل مسحوب عندك
                 "messages": [{"role": "user", "content": prompt}],
