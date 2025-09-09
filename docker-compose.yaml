@@ -1,16 +1,11 @@
 version: "3.9"
 
-networks:
-  appnet:
-
 services:
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
     ports:
       - "11434:11434"
-    networks:
-      - appnet
     volumes:
       - ollama_data:/root/.ollama
     command: >
@@ -25,8 +20,6 @@ services:
       - ollama
     environment:
       - OLLAMA_API_URL=http://ollama:11434/api/chat
-    networks:
-      - appnet
 
 volumes:
   ollama_data:
