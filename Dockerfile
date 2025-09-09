@@ -12,8 +12,10 @@ RUN apt-get update && apt-get install -y \
 # Install Ollama
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
-# Pull LLaMA 3.1 8B model (run in foreground to ensure completion)
-RUN ollama pull llama3.1:8b
+# Start Ollama server and pull LLaMA 3.1 8B model
+RUN ollama serve & \
+    sleep 10 && \
+    ollama pull llama3.1:8b
 
 # Install Python dependencies
 RUN pip install --no-cache-dir fastapi uvicorn pillow pytesseract python-multipart ollama
