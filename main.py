@@ -1,74 +1,39 @@
 from fastapi import FastAPI, File, UploadFile
 from PIL import Image
 import pytesseract
+import openai
 import os
 import json
-import re
-from transformers import pipeline
 
 app = FastAPI()
 
-# تحميل موديل توليد النصوص
-nlp = pipeline("text2text-generation", model="google/flan-t5-base")
+# مفتاح OpenAI مخزن في متغير بيئة
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-
-def extract_text_from_image(image_path: str) -> str:
-    """استخراج النص من الصورة باستخدام Tesseract OCR"""
+def extract_text_from_image(image_path):
     img = Image.open(image_path)
-    text = pytesseract.image_to_string(img, lang="ara+eng")
+    text = pytesseract.image_to_string(img, lang='ara')
     return text
 
-
-def regex_fallback(text: str) -> dict:
-    """محاولة استخراج البيانات باستخدام Regex في حالة فشل الموديل"""
-    data = {}
-
-    name = re.search(r"Full Name\s+([A-Za-z\s]+)", text)
-    data["name"] = name.group(1).strip() if name else None
-
-    age = re.search(r"Age\s+(\d+)", text)
-    data["age"] = age.group(1) if age else None
-
-    email = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}", text)
-    data["email"] = email.group(0) if email else None
-
-    phone = re.search(r"\+?\d[\d\s-]{8,}\d", text)
-    data["phone"] = phone.group(0) if phone else None
-
-    passport = re.search(r"PassportNo[-–—]?\s*([A-Z0-9]+)", text)
-    data["passport_no"] = passport.group(1) if passport else None
-
-    return data
-
-
-def extract_data(text: str) -> dict:
-    """استخدام الموديل لاستخراج البيانات في شكل JSON"""
+def extract_data(text):
     prompt = f"""
-    Extract the following information from the text:
-    - Full name
-    - Age
-    - Email
-    - Phone
-    - Passport number
-    
-    Text: {text}
-    
-    Return output as valid JSON with keys: name, age, email, phone, passport_no
-    """
-
+استخرج لي البيانات التالية من النص: الاسم، العمر، البريد، الهاتف
+النص: {text}
+أرجع النتائج في شكل JSON.
+"""
     try:
-        result = nlp(prompt, max_length=256, do_sample=False)
-        content = result[0]["generated_text"]
-
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0
+        )
+        content = response.choices[0].message.content
         try:
-            return json.loads(content)  # محاولة تحميل JSON
+            return json.loads(content)
         except:
-            # لو الموديل رجع نص مش JSON، نستخدم regex
-            return {"model_output": content, "regex_fallback": regex_fallback(text)}
-
+            return {"extracted_text": content}
     except Exception as e:
-        return {"error": str(e), "regex_fallback": regex_fallback(text)}
-
+        return {"error": str(e)}
 
 @app.post("/upload")
 async def upload_image(file: UploadFile = File(...)):
@@ -80,4 +45,4 @@ async def upload_image(file: UploadFile = File(...)):
     data = extract_data(text)
 
     os.remove(path)  # حذف الملف المؤقت
-    return {"text": text, "data": data}
+    return data
