@@ -8,7 +8,7 @@ import json
 app = FastAPI()
 
 # مفتاح OpenAI مخزن في متغير بيئة
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = "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"
 
 def extract_text_from_image(image_path):
     img = Image.open(image_path)
