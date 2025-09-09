@@ -3,7 +3,6 @@ from PIL import Image
 import pytesseract
 import os
 import re
-import json
 
 app = FastAPI()
 
@@ -20,7 +19,7 @@ def extract_text_from_image(image_path):
     return clean_text(text)
 
 def extract_data(text):
-    """Convert extracted text to structured JSON using regex and manual parsing."""
+    """Convert extracted text to structured JSON using flexible regex."""
     text = clean_text(text)
 
     data = {
@@ -46,56 +45,50 @@ def extract_data(text):
         }
     }
 
-    # Extract fields using regex
-    ref_match = re.search(r"Reference\s*No\s*(\S+)", text)
-    if ref_match: data["ReferenceNo"] = ref_match.group(1)
+    # Full Name
+    name_match = re.search(r"Full\s*Name\s*[\|:]?\s*([A-Z ]+)", text, re.IGNORECASE)
+    if name_match:
+        data["FullName"] = name_match.group(1).title().strip()
 
-    nationality_match = re.search(r"Nationality\s*(\S+)", text)
-    if nationality_match: data["Nationality"] = nationality_match.group(1)
+    # Nationality
+    nationality_match = re.search(r"Nationality\s*[\|:]?\s*(\S+)", text, re.IGNORECASE)
+    if nationality_match:
+        data["Nationality"] = nationality_match.group(1).title()
 
-    name_match = re.search(r"Full\s*Name\s*([A-Z ]+)", text)
-    if name_match: data["FullName"] = name_match.group(1).title()
+    # Age
+    age_match = re.search(r"Age\s*[\|:]?\s*(\d+)", text, re.IGNORECASE)
+    if age_match:
+        data["Age"] = age_match.group(1)
 
-    gender_match = re.search(r"Gender\s*(\S+)", text)
-    if gender_match: data["Gender"] = gender_match.group(1)
+    # Religion
+    religion_match = re.search(r"Religion\s*[\|:]?\s*(\S+)", text, re.IGNORECASE)
+    if religion_match:
+        data["Religion"] = religion_match.group(1).title()
 
-    passport_match = re.search(r"PassportNo\s*[-]?\s*(\S+)", text)
-    if passport_match: data["PassportNo"] = passport_match.group(1)
+    # Passport Number
+    passport_match = re.search(r"Passport\s*Details.*?Number\s*[\|:]?\s*(\S+)", text, re.IGNORECASE)
+    if passport_match:
+        data["PassportNo"] = passport_match.group(1)
 
-    religion_match = re.search(r"Religion\s*(\S+)", text)
-    if religion_match: data["Religion"] = religion_match.group(1)
+    # Date Issued
+    date_issued_match = re.search(r"Date of Issue\s*[\|:]?\s*(\d{1,2}/\d{1,2}/\d{4})", text, re.IGNORECASE)
+    if date_issued_match:
+        data["DateIssued"] = date_issued_match.group(1)
 
-    issuing_match = re.search(r"Issuing\s*Country\s*(\S+)", text)
-    if issuing_match: data["IssuingCountry"] = issuing_match.group(1)
+    # Date Expiry
+    date_expiry_match = re.search(r"Date of Expiry\s*[\|:]?\s*(\d{1,2}/\d{1,2}/\d{4})", text, re.IGNORECASE)
+    if date_expiry_match:
+        data["DateExpiry"] = date_expiry_match.group(1)
 
-    marital_match = re.search(r"Martial\s*Status\s*(\S+)", text)
-    if marital_match: data["MaritalStatus"] = marital_match.group(1)
-
-    place_match = re.search(r"page of sue\s*([A-Z ]+)", text, re.IGNORECASE)
-    if place_match: data["PlaceOfIssue"] = place_match.group(1).title()
-
-    dob_match = re.search(r"Date of Birth\s*(\d{1,2}/\d{1,2}/\d{4})", text)
-    if dob_match: data["DateOfBirth"] = dob_match.group(1)
-
-    issued_match = re.search(r"Date Issued\s*(\d{1,2}/\d{1,2}/\d{4})", text)
-    if issued_match: data["DateIssued"] = issued_match.group(1)
-
-    age_match = re.search(r"Age\s*(\d+)", text)
-    if age_match: data["Age"] = age_match.group(1)
-
-    expiry_match = re.search(r"DateExpiry\s*(\d{1,2}/\d{1,2}/\d{4})", text)
-    if expiry_match: data["DateExpiry"] = expiry_match.group(1)
-
-    height_match = re.search(r"Height\s*.*?(\d+cm)", text)
-    if height_match: data["Height"] = height_match.group(1)
-
-    weight_match = re.search(r"Weight\s*(\S*)", text)
-    if weight_match: data["Weight"] = weight_match.group(1) if weight_match.group(1) else None
+    # Place of Issue
+    place_match = re.search(r"Place of Issue\s*[\|:]?\s*([A-Z ]+)", text, re.IGNORECASE)
+    if place_match:
+        data["PlaceOfIssue"] = place_match.group(1).title().strip()
 
     # Skills
-    data["Skills"]["Cooking"] = "Yes" if re.search(r"Cooking\s*Yes", text, re.IGNORECASE) else "No"
-    data["Skills"]["Cleaning"] = "Yes" if re.search(r"Cleaning\s*Yes", text, re.IGNORECASE) else "No"
-    data["Skills"]["BabySitting"] = "Yes" if re.search(r"Baby\s*Sitting\s*Yes", text, re.IGNORECASE) else "No"
+    data["Skills"]["Cooking"] = "Yes" if re.search(r"Cooking\s*YES", text, re.IGNORECASE) else "No"
+    data["Skills"]["Cleaning"] = "Yes" if re.search(r"Cleaning\s*YES", text, re.IGNORECASE) else "No"
+    data["Skills"]["BabySitting"] = "Yes" if re.search(r"Baby\s*Sitting\s*YES", text, re.IGNORECASE) else "No"
 
     return data
 
