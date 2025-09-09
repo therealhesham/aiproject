@@ -19,7 +19,7 @@ def extract_text_from_image(image_path):
 
 def extract_data(text):
     prompt = f"""
-    send data as json 
+    send data as json as data to object to be inserted ready in table
    
     """
     try:
