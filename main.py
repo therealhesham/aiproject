@@ -19,8 +19,7 @@ def extract_text_from_image(image_path):
 
 def extract_data(text):
     prompt = f"""
-    extract data as json 
-    datqa like name or age passport naumber etc
+    extract text as json 
     """
     try:
         result = nlp(prompt, max_length=256, do_sample=False)
