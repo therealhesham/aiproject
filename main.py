@@ -9,8 +9,9 @@ from fastapi.responses import JSONResponse
 app = FastAPI()
 
 def clean_text(text):
-    """Clean extracted text by removing extra newlines and leading/trailing whitespace."""
+    """Clean extracted text by normalizing whitespace and removing control characters."""
     text = ' '.join(text.split())  # Normalize whitespace
+    text = ''.join(c for c in text if c.isprintable())  # Remove non-printable characters
     return text
 
 def extract_text_from_image(image_path):
@@ -44,6 +45,9 @@ def normalize_response(response_text):
             # Remove leading/trailing whitespace from keys and values
             clean_key = key.strip().replace(' ', '_').lower()  # Normalize keys (e.g., "Full Name" -> "full_name")
             clean_value = value.strip() if isinstance(value, str) else value
+            # Handle skills values (ensure "Yes" or "No")
+            if clean_key in ['cooking', 'cleaning', 'baby_sitting', 'children_care', 'disabled_care', 'washing', 'ironing', 'tutoring']:
+                clean_value = "Yes" if str(clean_value).lower() == "yes" else "No" if str(clean_value).lower() == "no" else clean_value
             normalized_data[clean_key] = clean_value
 
         return normalized_data
@@ -58,16 +62,18 @@ def process_with_ollama(text):
     Returns a JSON object with dynamically extracted fields.
     """
     prompt = f"""
-You are an AI tasked with extracting personal information from text extracted from an image. The text may contain various fields such as name, age, nationality, passport number, or other personal details, in Arabic, English, or both. The fields and their names may vary (e.g., "Name", "Full Name", "اسم", etc.), and the text may include noise, typos, or inconsistent formatting.
+You are an AI tasked with extracting personal information from noisy text extracted from an image via OCR. The text may contain fields like name, age, nationality, passport number, skills, or other personal details, in Arabic, English, or both. Field names may vary (e.g., "Name", "Full Name", "اسم", "الإسم الكامل"), and the text may include OCR errors, typos, or artifacts (e.g., symbols like '|', '©', or random characters).
 
-Your task is to identify and extract all relevant key-value pairs (e.g., "Name: Ahmed", "Age: 30") and return them as a JSON object. Each key should correspond to the field name (in English or transliterated from Arabic), and the value should be the associated data. For fields indicating skills (e.g., "Cooking: Yes"), assign "Yes" or "No" as the value. If a field is unclear or missing, exclude it from the JSON object. For dates, use the format DD/MM/YYYY if possible. Do not enforce a specific structure; include only the fields present in the text.
-
-Rules:
-- Extract all identifiable key-value pairs related to personal information or skills.
-- Handle Arabic and English text accurately, accounting for OCR errors or variations.
-- Normalize field names to lowercase with underscores (e.g., "Full Name" -> "full_name").
-- For skills, use "Yes" or "No" based on the text (e.g., "Cooking: Yes" -> "cooking": "Yes").
-- Return ONLY the JSON object as a string, with no additional text, comments, or explanations.
+Your task is to:
+1. Identify all key-value pairs related to personal information or skills (e.g., "Name: Ahmed", "Age: 30", "Cooking: Yes").
+2. Return them as a JSON object where keys are field names (in English or transliterated from Arabic) and values are the associated data.
+3. Do not enforce a specific structure; include only the fields present in the text.
+4. Handle OCR noise by ignoring invalid characters and inferring correct field names/values.
+5. For skills (e.g., "Cooking", "Cleaning"), assign "Yes" or "No" based on the text.
+6. For dates, use the format DD/MM/YYYY if possible.
+7. Transliterate Arabic field names to English (e.g., "الإسم الكامل" -> "full_name").
+8. Normalize field names to lowercase with underscores (e.g., "Full Name" -> "full_name").
+9. Return ONLY the JSON object as a string, with no additional text, comments, or explanations.
 
 Text to process:
 {text}
