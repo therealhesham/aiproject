@@ -7,7 +7,7 @@ import json
 
 app = FastAPI()
 
-OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/chat")
+OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://q0swc40o0s4sooscgc0gcows.31.97.55.12.sslip.io/api/chat")
 
 
 def extract_text_from_image(image_path):
