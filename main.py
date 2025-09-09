@@ -25,7 +25,7 @@ def extract_data(text):
 """
     try:
         response = requests.post(
-            OLLAMA_API_URL,
+           "http://localhost:11434/api/chat",
             json={
                 "model": "mistral",  # أو أي موديل مسحوب عندك
                 "messages": [{"role": "user", "content": prompt}],
