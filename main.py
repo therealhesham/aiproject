@@ -8,7 +8,6 @@ import json
 app = FastAPI()
 
 # عنوان Ollama server (ممكن يتغير لو سيرفر تاني)
-OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/chat")
 
 
 def extract_text_from_image(image_path):
