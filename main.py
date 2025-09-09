@@ -21,15 +21,19 @@ def extract_data(text):
 النص: {text}
 أرجع النتائج في شكل JSON.
 """
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0
-    )
     try:
-        return json.loads(response['choices'][0]['message']['content'])
-    except:
-        return {"extracted_text": response['choices'][0]['message']['content']}
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0
+        )
+        content = response.choices[0].message.content
+        try:
+            return json.loads(content)
+        except:
+            return {"extracted_text": content}
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.post("/upload")
 async def upload_image(file: UploadFile = File(...)):
