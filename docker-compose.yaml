@@ -6,20 +6,22 @@ services:
     container_name: ollama
     ports:
       - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    command: >
-      sh -c "ollama serve & sleep 5 && ollama pull mistral && wait"
+    networks:
+      - coolify
+    command: serve
 
   fastapi:
     build: .
     container_name: fastapi
-    ports:
-      - "3030:3030"
     depends_on:
       - ollama
+    ports:
+      - "3030:3030"
     environment:
       - OLLAMA_API_URL=http://ollama:11434/api/chat
+    networks:
+      - coolify
 
-volumes:
-  ollama_data:
+networks:
+  coolify:
+    external: true
